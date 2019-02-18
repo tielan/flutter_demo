@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'loading.dart';
-import 'hud/hud.dart';
-import 'hud/menu.dart';
+import './toastdemo/toast_demo.dart';
+import './loadingdemo/loading_demo.dart';
+import './dialog_demo.dart';
+import './location/loc_main.dart';
 
 void main() => runApp(MyApp());
 
@@ -9,7 +10,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -19,28 +19,55 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatelessWidget {
-  GlobalKey menuKey = new GlobalKey();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('data'),
       ),
-      body: Center(
-        child: InkWell(
-          key: menuKey,
-          onTap: () {
-            showMenu(menuKey.currentContext);
-          },
-          child: Text('操作失败操作失败操作失败操作失败操作失败操作失败'),
-        ),
+      body: ListView(
+        children: <Widget>[
+          buildItem(context, "1、Toast Demo", (BuildContext context) {
+            return ToastDemo();
+          }),
+          buildItem(context, "2、Loading Demo", (BuildContext context) {
+            return LoadingDemo();
+          }),
+          buildItem(context, "3、Dialog Demo", (BuildContext context) {
+            return DialogDemo();
+          }),
+          buildItem(context, "4、Location Demo", (BuildContext context) {
+            return LocationDemo();
+          }),
+          buildItem(context, "5、VideoPlay Demo", (BuildContext context) {
+            return LoadingDemo();
+          }),
+          buildItem(context, "6、QR Demo", (BuildContext context) {
+            return LoadingDemo();
+          })
+        ],
+      ),
+    );
+  }
+
+  Widget buildItem(BuildContext context, String title, WidgetBuilder builder) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(context, new MaterialPageRoute(builder: builder));
+      },
+      child: Container(
+        height: 44.0,
+        padding: EdgeInsets.only(left: 16),
+        alignment: Alignment.centerLeft,
+        decoration: BoxDecoration(border: Border(bottom: BorderSide())),
+        child: Text(title),
       ),
     );
   }
 }
 
-void showMenu(BuildContext context) {
-  RenderBox box = context.findRenderObject();
-  double startY = box.localToGlobal(Offset(0.0, box.size.height)).dy;
-  Menu.show(context,startY, 'fdfasdsadf');
-}
+// void showMenu(BuildContext context) {
+//   RenderBox box = context.findRenderObject();
+//   double startY = box.localToGlobal(Offset(0.0, box.size.height)).dy;
+//   Menu.show(context,startY, 'fdfasdsadf');
+// }

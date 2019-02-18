@@ -117,7 +117,7 @@ class ToastWidget extends StatelessWidget {
     return AnimatedBuilder(
       animation: opacityAnim1,
       child: child,
-      builder: (context, child_to_build) {
+      builder: (context, childToBuild) {
         return Opacity(
           opacity: opacityAnim1.value,
           child: AnimatedBuilder(
@@ -130,7 +130,7 @@ class ToastWidget extends StatelessWidget {
                   builder: (context, _) {
                     return Opacity(
                       opacity: opacityAnim2.value,
-                      child: child_to_build,
+                      child: childToBuild,
                     );
                   },
                 ),

@@ -44,6 +44,12 @@ class _LoadingViewState extends State<LoadingView>
   }
 
   @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Center(
       child: images[currentIndex],

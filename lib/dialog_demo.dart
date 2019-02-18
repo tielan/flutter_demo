@@ -53,44 +53,50 @@ class _DialogDemo extends State<DialogDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        RaisedButton(
-          child: Text('show simple dialog'),
-          onPressed: () => showDialog(
-              context: context, builder: (_) => _generateSimpleDialog()),
-        ),
-        RaisedButton(
-          child: Text('show alert dialog'),
-          onPressed: () => showDialog(
-              context: context, builder: (_) => _generateAlertDialog()),
-        ),
-        RaisedButton(
-            child: Text('show general dialog'),
-            onPressed: () {
-              //  showModalBottomSheet();
-              showGeneralDialog(
-                  context: context,
-                  pageBuilder: (BuildContext context,
-                      Animation<double> animation,
-                      Animation<double> secondaryAnimation) {
-                    return ModalPage(animation);
-                  },
-                  barrierDismissible: false,
-                  barrierLabel: 'barrierLabel',
-                  transitionDuration: Duration(milliseconds: 400),
-                  transitionBuilder:
-                      (___, Animation<double> animation, ____, Widget child) {
-                    return SlideTransition(
-                      position: Tween<Offset>(
-                              begin: Offset(0.0, 1.0), end: Offset(0.0, 0.0))
-                          .animate(CurvedAnimation(
-                              parent: animation, curve: Curves.fastOutSlowIn)),
-                      child: child,
-                    );
-                  });
-            }),
-      ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Dialog Demo'),
+      ),
+      body: Column(
+        children: <Widget>[
+          RaisedButton(
+            child: Text('show simple dialog'),
+            onPressed: () => showDialog(
+                context: context, builder: (_) => _generateSimpleDialog()),
+          ),
+          RaisedButton(
+            child: Text('show alert dialog'),
+            onPressed: () => showDialog(
+                context: context, builder: (_) => _generateAlertDialog()),
+          ),
+          RaisedButton(
+              child: Text('show general dialog'),
+              onPressed: () {
+                //  showModalBottomSheet();
+                showGeneralDialog(
+                    context: context,
+                    pageBuilder: (BuildContext context,
+                        Animation<double> animation,
+                        Animation<double> secondaryAnimation) {
+                      return ModalPage(animation);
+                    },
+                    barrierDismissible: false,
+                    barrierLabel: 'barrierLabel',
+                    transitionDuration: Duration(milliseconds: 400),
+                    transitionBuilder:
+                        (___, Animation<double> animation, ____, Widget child) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                                begin: Offset(0.0, 1.0), end: Offset(0.0, 0.0))
+                            .animate(CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.fastOutSlowIn)),
+                        child: child,
+                      );
+                    });
+              }),
+        ],
+      ),
     );
   }
 }
@@ -182,9 +188,7 @@ class _ModalPageState extends State<ModalPage> {
                       child: Center(
                         child: Container(
                           height: 56.0,
-                          child: TextField(
-                          
-                        ),
+                          child: TextField(),
                         ),
                       ),
                     )
