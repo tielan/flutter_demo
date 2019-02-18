@@ -3,6 +3,8 @@ import './toastdemo/toast_demo.dart';
 import './loadingdemo/loading_demo.dart';
 import './dialog_demo.dart';
 import './location/loc_main.dart';
+import './videodemo/video_demo.dart';
+import './qrdemo/qr_demo.dart';
 
 void main() => runApp(MyApp());
 
@@ -40,10 +42,10 @@ class MyHomePage extends StatelessWidget {
             return LocationDemo();
           }),
           buildItem(context, "5、VideoPlay Demo", (BuildContext context) {
-            return LoadingDemo();
+            return VideoPlayDemo();
           }),
           buildItem(context, "6、QR Demo", (BuildContext context) {
-            return LoadingDemo();
+            return QRDemo();
           })
         ],
       ),

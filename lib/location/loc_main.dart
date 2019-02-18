@@ -9,7 +9,7 @@ class LocationDemo extends StatefulWidget {
 }
 
 class _LocationDemoState extends State<LocationDemo> {
-  String province = '上海';
+  String province = '湖南省';
   String city = '上海';
   String town = '上海';
   @override

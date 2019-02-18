@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import './location.dart';
 
 typedef DateChangedCallback(String province, String city, String town);
@@ -13,7 +12,7 @@ class LocationPicker {
   static void showPicker(
     BuildContext context, {
     bool showTitleActions: true,
-    initialProvince: '上海市',
+    initialProvince: '湖南省',
     initialCity: '上海市',
     initialTown: '长宁区',
     DateChangedCallback onChanged,
@@ -119,6 +118,8 @@ class _PickerComponent extends StatefulWidget {
 
 class _PickerState extends State<_PickerComponent> {
   String _currentProvince, _currentCity, _currentTown;
+  String _currentProvinceCode, _currentCityCode, _currentTownCode;
+
   var cities = [];
   var towns = [];
   var provinces = [];
@@ -135,7 +136,6 @@ class _PickerState extends State<_PickerComponent> {
   _PickerState(this._currentProvince, this._currentCity, this._currentTown) {
     provinces = Locations.provinces;
     hasTown = this._currentTown != null;
-
     _init();
   }
 
@@ -171,7 +171,6 @@ class _PickerState extends State<_PickerComponent> {
     String selectedProvince = provinces[pindex];
     if (selectedProvince != null) {
       _currentProvince = selectedProvince;
-
       cities = Locations.getCities(selectedProvince);
       if (!hasTown && cities.length == 1) {
         //不显示县城的时候 直辖市显示 areaList
@@ -180,15 +179,15 @@ class _PickerState extends State<_PickerComponent> {
       cindex = cities.indexWhere((c) => c['value'].indexOf(_currentCity) >= 0);
       cindex = cindex >= 0 ? cindex : 0;
       _currentCity = cities[cindex]['value'];
-
       if (hasTown) {
         towns = Locations.getTowns(_currentCity, cities);
-        tindex = towns.indexWhere((t) => t.indexOf(_currentTown) >= 0) ?? 0;
+        tindex =
+            towns.indexWhere((t) => t['value'].indexOf(_currentTown) >= 0) ?? 0;
         tindex = tindex >= 0 ? tindex : 0;
-        _currentTown = towns[tindex];
+        _currentTown = towns[tindex]['value'];
+        _currentTownCode = towns[tindex]['id'];
       }
     }
-
     provinceScrollCtrl = new FixedExtentScrollController(initialItem: pindex);
     cityScrollCtrl = new FixedExtentScrollController(initialItem: cindex);
     townScrollCtrl = new FixedExtentScrollController(initialItem: tindex);
@@ -199,7 +198,6 @@ class _PickerState extends State<_PickerComponent> {
     if (_currentProvince != selectedProvince) {
       setState(() {
         _currentProvince = selectedProvince;
-
         cities = Locations.getCities(selectedProvince);
         if (!hasTown && cities.length == 1) {
           //不显示县城的时候 直辖市显示 areaList
@@ -209,11 +207,11 @@ class _PickerState extends State<_PickerComponent> {
         cityScrollCtrl.jumpToItem(0);
         if (hasTown) {
           towns = Locations.getTowns(cities[0]['value'], cities);
-          _currentTown = towns[0];
+          _currentTown = towns[0]['value'];
+           _currentTownCode = towns[0]['id'];
           townScrollCtrl.jumpToItem(0);
         }
       });
-
       _notifyLocationChanged();
     }
   }
@@ -234,7 +232,7 @@ class _PickerState extends State<_PickerComponent> {
   }
 
   void _setTown(int index) {
-    String selectedTown = towns[index];
+    String selectedTown = towns[index]['value'];
     if (_currentTown != selectedTown) {
       _currentTown = selectedTown;
       _notifyLocationChanged();
@@ -351,7 +349,7 @@ class _PickerState extends State<_PickerComponent> {
                         _setTown(index);
                       },
                       children: List.generate(towns.length, (int index) {
-                        String text = towns[index];
+                        String text = towns[index]['value'];
                         return Container(
                           height: _kPickerItemHeight,
                           alignment: Alignment.center,
@@ -419,11 +417,9 @@ class _PickerState extends State<_PickerComponent> {
 
 class _BottomPickerLayout extends SingleChildLayoutDelegate {
   _BottomPickerLayout(this.progress, {this.itemCount, this.showTitleActions});
-
   final double progress;
   final int itemCount;
   final bool showTitleActions;
-
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
     double maxHeight = _kPickerHeight;
