@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'flutter_location_picker.dart';
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import './location.dart';
 
 class LocationDemo extends StatefulWidget {
@@ -15,9 +16,7 @@ class _LocationDemoState extends State<LocationDemo> {
   @override
   void initState() {
     super.initState();
-    Future<String> loadString =
-        DefaultAssetBundle.of(context).loadString("data/region.json");
-    loadString.then((String value) {
+    rootBundle.loadString("data/region.json").then((String value) {
       Locations.setLocations(json.decode(value));
     });
   }
