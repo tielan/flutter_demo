@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'flutter_location_picker.dart';
-import 'dart:convert';
-import 'package:flutter/services.dart';
-import './location.dart';
+import '../picker/picker.dart';
 
 class LocationDemo extends StatefulWidget {
   @override
@@ -10,16 +7,7 @@ class LocationDemo extends StatefulWidget {
 }
 
 class _LocationDemoState extends State<LocationDemo> {
-  String province = '湖南省';
-  String city = '上海';
-  String town = '上海';
-  @override
-  void initState() {
-    super.initState();
-    rootBundle.loadString("data/region.json").then((String value) {
-      Locations.setLocations(json.decode(value));
-    });
-  }
+  String province = '';
 
   @override
   Widget build(BuildContext context) {
@@ -28,44 +16,79 @@ class _LocationDemoState extends State<LocationDemo> {
         title: Text('Location Demo'),
       ),
       body: Container(
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          child: RaisedButton(
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    'Pick location',
-                    style: TextStyle(fontSize: 24.0, height: 2.0),
+        child: Column(
+          children: <Widget>[
+            Container(
+              width: MediaQuery.of(context).size.width,
+              child: RaisedButton(
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        'Pick location',
+                        style: TextStyle(fontSize: 24.0, height: 2.0),
+                      ),
+                      Text(
+                        '$province ',
+                        style: TextStyle(fontSize: 22.0),
+                      )
+                    ],
                   ),
-                  Text(
-                    '$province $city ${town ?? ''}',
-                    style: TextStyle(fontSize: 22.0),
-                  )
-                ],
-              ),
-              onPressed: () {
-                LocationPicker.showPicker(
-                  context,
-                  showTitleActions: true,
-                  initialProvince: province,
-                  initialCity: city,
-                  initialTown: town,
-                  onChanged: (p, c, t) {
-                    print('$p $c $t');
-                  },
-                  onConfirm: (p, c, t) {
-                    print('$p $c $t');
-                    setState(() {
-                      province = p;
-                      city = c;
-                      town = t;
-                    });
-                  },
-                );
-              }),
+                  onPressed: () {
+                    Picker.showLocationPicker(
+                      context,
+                      initialNames: province,
+                      onConfirm: (p, c) {
+                        print('$p $c');
+                        setState(() {
+                          province = p;
+                        });
+                      },
+                    );
+                  }),
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              child: RaisedButton(
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        'Pick location',
+                        style: TextStyle(fontSize: 24.0, height: 2.0),
+                      ),
+                      Text(
+                        '$province ',
+                        style: TextStyle(fontSize: 22.0),
+                      )
+                    ],
+                  ),
+                  onPressed: () {
+                    Picker.showSelectPicker(
+                      context,
+                      listData: ['男', '女', '保密'],
+                      onConfirm: (p, c) {
+                        print('$p $c');
+                      },
+                    );
+                  }),
+            ),
+            FlatButton(
+                onPressed: () {
+                  Picker.showDatePicker(context, maxTime: DateTime.now(),
+                      onConfirm: (date) {
+                    print('confirm $date');
+                  });
+                },
+                child: Text(
+                  'show date picker(custom theme &date time range)',
+                  style: TextStyle(color: Colors.blue),
+                )),
+          ],
         ),
       ),
     );

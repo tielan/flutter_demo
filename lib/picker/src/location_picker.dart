@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
 import './location.dart';
 
-typedef DateChangedCallback(String province, String city, String town);
+typedef LocationChangedCallback(String names, String code);
 
 const double _kPickerHeight = 220.0;
 const double _kPickerTitleHeight = 44.0;
@@ -12,12 +14,31 @@ class LocationPicker {
   static void showPicker(
     BuildContext context, {
     bool showTitleActions: true,
+    String initialNames,
     initialProvince: '湖南省',
-    initialCity: '上海市',
-    initialTown: '长宁区',
-    DateChangedCallback onChanged,
-    DateChangedCallback onConfirm,
-  }) {
+    initialCity: '长沙市',
+    initialTown: '雨花区',
+    LocationChangedCallback onChanged,
+    LocationChangedCallback onConfirm,
+  }) async {
+    if (Locations.locations == null) {
+      String regionData = await rootBundle.loadString("data/region.json");
+      Locations.setLocations(json.decode(regionData));
+    }
+    if (initialNames != null) {
+      List<String> names = initialNames.split(',');
+      if (names.length == 1) {
+        initialProvince = names[0];
+      } else if (names.length == 2) {
+        initialProvince = names[0];
+        initialCity = names[1];
+      } else if (names.length == 3) {
+        initialProvince = names[0];
+        initialCity = names[1];
+        initialTown = names[2];
+      }
+    }
+
     Navigator.push(
         context,
         new _PickerRoute(
@@ -49,8 +70,8 @@ class _PickerRoute<T> extends PopupRoute<T> {
 
   final bool showTitleActions;
   final String initialProvince, initialCity, initialTown;
-  final DateChangedCallback onChanged;
-  final DateChangedCallback onConfirm;
+  final LocationChangedCallback onChanged;
+  final LocationChangedCallback onConfirm;
   final ThemeData theme;
 
   @override
@@ -108,35 +129,102 @@ class _PickerComponent extends StatefulWidget {
   });
 
   final String initialProvince, initialCity, initialTown;
-  final DateChangedCallback onChanged;
+  final LocationChangedCallback onChanged;
   final _PickerRoute route;
 
   @override
-  State<StatefulWidget> createState() =>
-      _PickerState(this.initialProvince, this.initialCity, this.initialTown);
+  __PickerComponentState createState() {
+    return __PickerComponentState();
+  }
 }
 
-class _PickerState extends State<_PickerComponent> {
-  String _currentProvince, _currentCity, _currentTown;
-  String _currentProvinceCode, _currentCityCode, _currentTownCode;
-
-  var cities = [];
-  var towns = [];
-  var provinces = [];
-
-  bool hasTown = true;
-
+class __PickerComponentState extends State<_PickerComponent> {
   AnimationController controller;
   Animation<double> animation;
+  FixedExtentScrollController provinceScrollCtrl;
+  FixedExtentScrollController cityScrollCtrl;
+  FixedExtentScrollController townScrollCtrl;
 
-  FixedExtentScrollController provinceScrollCtrl,
-      cityScrollCtrl,
-      townScrollCtrl;
+  List cities = [];
+  List towns = [];
+  List provinces = [];
 
-  _PickerState(this._currentProvince, this._currentCity, this._currentTown) {
-    provinces = Locations.provinces;
-    hasTown = this._currentTown != null;
+  Map _currentProvince;
+  Map _currentCity;
+  Map _currentTown;
+
+  @override
+  void initState() {
+    super.initState();
     _init();
+  }
+
+  _init() {
+    int pindex = 0;
+    int cindex = 0;
+    int tindex = 0;
+
+    provinces = Locations.getProvinces();
+    pindex = Locations.getProvincesIndex(widget.initialProvince);
+    var selectedProvince = provinces[pindex];
+    if (selectedProvince != null) {
+      _currentProvince = selectedProvince;
+
+      cities = Locations.getCities(selectedProvince);
+      cindex = Locations.getCitieIndex(widget.initialCity, cities);
+      _currentCity = cities[cindex];
+
+      towns = Locations.getTowns(cities[cindex]);
+      if (towns != null && towns.length > 0) {
+        tindex = Locations.getTownIndex(widget.initialTown, towns);
+        _currentTown = towns[tindex];
+      }
+    }
+
+    provinceScrollCtrl = new FixedExtentScrollController(initialItem: pindex);
+    cityScrollCtrl = new FixedExtentScrollController(initialItem: cindex);
+    townScrollCtrl = new FixedExtentScrollController(initialItem: tindex);
+  }
+
+  void _setProvince(int index) {
+    Map selectedProvince = provinces[index];
+    if (_currentProvince == null ||
+        _currentProvince['value'] != selectedProvince['value']) {
+      setState(() {
+        _currentProvince = selectedProvince;
+
+        cities = Locations.getCities(selectedProvince);
+        _currentCity = cities[0];
+        cityScrollCtrl.jumpToItem(0);
+
+        towns = Locations.getTowns(cities[0]);
+        _currentTown = towns.length == 0 ? null : towns[0];
+        townScrollCtrl.jumpToItem(0);
+      });
+    }
+  }
+
+  void _setCity(int index) {
+    index = cities.length > index ? index : cities.length - 1;
+    Map selectedCity = cities[index];
+    if (_currentCity == null ||
+        _currentCity['value'] != selectedCity['value']) {
+      setState(() {
+        _currentCity = selectedCity;
+
+        towns = Locations.getTowns(selectedCity);
+        _currentTown = towns.length == 0 ? null : towns[0];
+        townScrollCtrl.jumpToItem(0);
+      });
+    }
+  }
+
+  void _setTown(int index) {
+    Map selectedTown = towns[index];
+    if (_currentTown != null ||
+        _currentTown['value'] != selectedTown['value']) {
+      _currentTown = selectedTown;
+    }
   }
 
   @override
@@ -162,91 +250,8 @@ class _PickerState extends State<_PickerComponent> {
     );
   }
 
-  _init() {
-    int pindex = 0;
-    int cindex = 0;
-    int tindex = 0;
-    pindex = provinces.indexWhere((p) => p.indexOf(_currentProvince) >= 0);
-    pindex = pindex >= 0 ? pindex : 0;
-    String selectedProvince = provinces[pindex];
-    if (selectedProvince != null) {
-      _currentProvince = selectedProvince;
-      cities = Locations.getCities(selectedProvince);
-      if (!hasTown && cities.length == 1) {
-        //不显示县城的时候 直辖市显示 areaList
-        cities = cities[0]['children'].map((c) => {'value': c}).toList();
-      }
-      cindex = cities.indexWhere((c) => c['value'].indexOf(_currentCity) >= 0);
-      cindex = cindex >= 0 ? cindex : 0;
-      _currentCity = cities[cindex]['value'];
-      if (hasTown) {
-        towns = Locations.getTowns(_currentCity, cities);
-        tindex =
-            towns.indexWhere((t) => t['value'].indexOf(_currentTown) >= 0) ?? 0;
-        tindex = tindex >= 0 ? tindex : 0;
-        _currentTown = towns[tindex]['value'];
-        _currentTownCode = towns[tindex]['id'];
-      }
-    }
-    provinceScrollCtrl = new FixedExtentScrollController(initialItem: pindex);
-    cityScrollCtrl = new FixedExtentScrollController(initialItem: cindex);
-    townScrollCtrl = new FixedExtentScrollController(initialItem: tindex);
-  }
-
-  void _setProvince(int index) {
-    String selectedProvince = provinces[index];
-    if (_currentProvince != selectedProvince) {
-      setState(() {
-        _currentProvince = selectedProvince;
-        cities = Locations.getCities(selectedProvince);
-        if (!hasTown && cities.length == 1) {
-          //不显示县城的时候 直辖市显示 areaList
-          cities = cities[0]['children'].map((c) => {'value': c}).toList();
-        }
-        _currentCity = cities[0]['value'];
-        cityScrollCtrl.jumpToItem(0);
-        if (hasTown) {
-          towns = Locations.getTowns(cities[0]['value'], cities);
-          _currentTown = towns[0]['value'];
-           _currentTownCode = towns[0]['id'];
-          townScrollCtrl.jumpToItem(0);
-        }
-      });
-      _notifyLocationChanged();
-    }
-  }
-
-  void _setCity(int index) {
-    index = cities.length > index ? index : cities.length - 1;
-    String selectedCity = cities[index]['value'];
-    if (_currentCity != selectedCity) {
-      if (hasTown) {
-        setState(() {
-          towns = Locations.getTowns(selectedCity, cities);
-          townScrollCtrl.jumpToItem(0);
-        });
-      }
-      _currentCity = selectedCity;
-      _notifyLocationChanged();
-    }
-  }
-
-  void _setTown(int index) {
-    String selectedTown = towns[index]['value'];
-    if (_currentTown != selectedTown) {
-      _currentTown = selectedTown;
-      _notifyLocationChanged();
-    }
-  }
-
-  void _notifyLocationChanged() {
-    if (widget.onChanged != null) {
-      widget.onChanged(_currentProvince, _currentCity, _currentTown);
-    }
-  }
-
   double _pickerFontSize(String text) {
-    double ratio = hasTown ? 0.0 : 2.0;
+    double ratio = 0.0;
     if (text == null || text.length <= 6) {
       return 18.0;
     } else if (text.length < 9) {
@@ -288,8 +293,8 @@ class _PickerState extends State<_PickerComponent> {
               onSelectedItemChanged: (int index) {
                 _setProvince(index);
               },
-              children: List.generate(Locations.provinces.length, (int index) {
-                String text = Locations.provinces[index];
+              children: List.generate(provinces.length, (int index) {
+                String text = provinces[index]['value'];
                 return Container(
                   height: _kPickerItemHeight,
                   alignment: Alignment.center,
@@ -334,37 +339,35 @@ class _PickerState extends State<_PickerComponent> {
                 }),
               )),
         ),
-        hasTown
-            ? Expanded(
-                flex: 1,
-                child: Container(
-                    padding: EdgeInsets.all(8.0),
-                    height: _kPickerHeight,
-                    decoration: BoxDecoration(color: Colors.white),
-                    child: CupertinoPicker(
-                      backgroundColor: Colors.white,
-                      scrollController: townScrollCtrl,
-                      itemExtent: _kPickerItemHeight,
-                      onSelectedItemChanged: (int index) {
-                        _setTown(index);
-                      },
-                      children: List.generate(towns.length, (int index) {
-                        String text = towns[index]['value'];
-                        return Container(
-                          height: _kPickerItemHeight,
-                          alignment: Alignment.center,
-                          child: Text(
-                            "${text}",
-                            style: TextStyle(
-                                color: Color(0xFF000046),
-                                fontSize: _pickerFontSize(text)),
-                            textAlign: TextAlign.start,
-                          ),
-                        );
-                      }),
-                    )),
-              )
-            : Center()
+        Expanded(
+          flex: 1,
+          child: Container(
+              padding: EdgeInsets.all(8.0),
+              height: _kPickerHeight,
+              decoration: BoxDecoration(color: Colors.white),
+              child: CupertinoPicker(
+                backgroundColor: Colors.white,
+                scrollController: townScrollCtrl,
+                itemExtent: _kPickerItemHeight,
+                onSelectedItemChanged: (int index) {
+                  _setTown(index);
+                },
+                children: List.generate(towns.length, (int index) {
+                  String text = towns[index]['value'];
+                  return Container(
+                    height: _kPickerItemHeight,
+                    alignment: Alignment.center,
+                    child: Text(
+                      "${text}",
+                      style: TextStyle(
+                          color: Color(0xFF000046),
+                          fontSize: _pickerFontSize(text)),
+                      textAlign: TextAlign.start,
+                    ),
+                  );
+                }),
+              )),
+        )
       ],
     );
   }
@@ -402,8 +405,16 @@ class _PickerState extends State<_PickerComponent> {
               ),
               onPressed: () {
                 if (widget.route.onConfirm != null) {
-                  widget.route
-                      .onConfirm(_currentProvince, _currentCity, _currentTown);
+                  String names =
+                      _currentProvince['value'] + ',' + _currentCity['value'];
+                  String code =
+                      _currentProvince['id'] + ',' + _currentCity['id'];
+                  if (_currentCity['id'] != _currentTown['id']) {
+                    //id
+                    names += ',' + _currentTown['value'];
+                    code += ',' + _currentTown['id'];
+                  }
+                  widget.route.onConfirm(names, code);
                 }
                 Navigator.pop(context);
               },
